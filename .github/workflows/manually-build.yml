@@ -87,7 +87,7 @@ jobs:
       - run: bin/xcpkg sysinfo
       - run: bin/xcpkg update
       - run: bin/xcpkg install ${{ github.event.inputs.target-platform }}-${{ github.event.inputs.target-version }}-${{ github.event.inputs.target-arch }}/${{ github.event.inputs.package-name }} --profile=${{ github.event.inputs.profile }} ${{ github.event.inputs.log-level }}
-      - run: bin/xcpkg bundle  ${{ github.event.inputs.target-platform }}-${{ github.event.inputs.target-version }}-${{ github.event.inputs.target-arch }}/${{ github.event.inputs.package-name }} .tar.xz
+      - run: bin/xcpkg bundle  ${{ github.event.inputs.target-platform }}-${{ github.event.inputs.target-version }}-${{ github.event.inputs.target-arch }}/${{ github.event.inputs.package-name }} .tar.xz -v
 
       - uses: actions/upload-artifact@v4
         with:
