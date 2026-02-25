@@ -52,26 +52,9 @@ on:
 
 jobs:
 
-  prepare:
-    runs-on: ubuntu-latest
-
-    steps:
-      - id:  prepare
-        run: |
-          if [ ${{ github.event.inputs.target-arch }} = x86_64 ] ; then
-              printf 'RUNS_ON=macos-13\n' >> "$GITHUB_OUTPUT"
-          else
-              printf 'RUNS_ON=macos-14\n' >> "$GITHUB_OUTPUT"
-          fi
-
-    outputs:
-      runs-on: ${{ steps.prepare.outputs.RUNS_ON }}
-
-
   build:
-    needs: prepare
 
-    runs-on: ${{ needs.prepare.outputs.runs-on }}
+    runs-on: macos-26
 
     steps:
       - run: export -p
