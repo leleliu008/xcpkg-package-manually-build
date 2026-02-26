@@ -57,11 +57,19 @@ on:
           - '-v'
           - '-vv'
 
+      runs-on:
+        description: choose a GitHub Actions runner
+        type: choice
+        options:
+          - macos-26
+          - macos-15
+          - macos-14
+
 jobs:
 
   build:
 
-    runs-on: macos-26
+    runs-on: ${{ github.event.inputs.runs-on }}
 
     steps:
       - run: curl -LO https://github.com/leleliu008/test/releases/download/2023.10.08/xcpkg-0.30.0-macos-15.0-arm64.release.tar.xz
