@@ -57,7 +57,17 @@ on:
           - '-v'
           - '-vv'
 
-      runs-on:
+      bundle-type:
+        description: choose a bundle type
+        type: choice
+        options:
+          - .tar.xz
+          - .tar.lz
+          - .tar.gz
+          - .tar.bz2
+          - .zip
+
+      runner:
         description: choose a GitHub Actions runner
         type: choice
         options:
@@ -65,23 +75,58 @@ on:
           - macos-15
           - macos-14
 
+      publish:
+        description: whether to publish as GitHub release
+        type: boolean
+        default: false
+
+
 jobs:
 
   build:
 
-    runs-on: ${{ github.event.inputs.runs-on }}
+    runs-on: ${{ github.event.inputs.runner }}
 
     steps:
       - run: curl -LO https://github.com/leleliu008/test/releases/download/2023.10.08/xcpkg-0.30.0-macos-15.0-arm64.release.tar.xz
       - run: /usr/bin/bsdtar xf xcpkg-0.30.0-macos-15.0-arm64.release.tar.xz --strip-components=1
+      - run: rm xcpkg-*.tar.xz
 
       - run: bin/xcpkg about
       - run: bin/xcpkg sysinfo
       - run: bin/xcpkg update
       - run: bin/xcpkg install ${{ github.event.inputs.target-platform }}-${{ github.event.inputs.target-version }}-${{ github.event.inputs.target-arch }}/${{ github.event.inputs.package-name }} --profile=${{ github.event.inputs.profile }} ${{ github.event.inputs.log-level }}
-      - run: bin/xcpkg bundle  ${{ github.event.inputs.target-platform }}-${{ github.event.inputs.target-version }}-${{ github.event.inputs.target-arch }}/${{ github.event.inputs.package-name }} .tar.xz -v
+      - run: bin/xcpkg bundle  ${{ github.event.inputs.target-platform }}-${{ github.event.inputs.target-version }}-${{ github.event.inputs.target-arch }}/${{ github.event.inputs.package-name }} ${{ github.event.inputs.bundle-type }} -v
 
       - uses: actions/upload-artifact@v6
         with:
-          name: ${{ github.event.inputs.package-name }}---${{ github.event.inputs.target-platform }}-${{ github.event.inputs.target-version }}-${{ github.event.inputs.target-arch }}.tar.xz
-          path: ./*.tar.xz
+          name: ${{ github.event.inputs.package-name }}---${{ github.event.inputs.target-platform }}-${{ github.event.inputs.target-version }}-${{ github.event.inputs.target-arch }}${{ github.event.inputs.bundle-type }}
+          path: ./*${{ github.event.inputs.bundle-type }}
+
+
+  publish:
+    needs: build
+    if: github.event.inputs.publish == 'true'
+
+    runs-on: ubuntu-latest
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: '*'
+          path: .
+          merge-multiple: true
+
+      - run: ls -a
+
+      # to avaid: failed to run git: fatal: not a git repository (or any of the parent directories): .git
+      - run: git -c init.defaultBranch=master init
+      - run: git remote add origin ${{ github.repositoryUrl }}
+
+      - run: |
+          FILENAME="$(ls ./*${{ github.event.inputs.bundle-type }})"
+
+          gh release create "$FILENAME" "$FILENAME" --title "$FILENAME" --notes "$FILENAME"
